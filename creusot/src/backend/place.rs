@@ -161,6 +161,16 @@ fn create_assign_rec<'tcx>(
     }
 }
 
+fn qname_to_str(q: &QName) -> String {
+    let mut s = String::new();
+    for i in &q.module {
+        s.push_str(&i);
+        s.push_str(".");
+    }
+    s.push_str(&q.name);
+    s
+}
+
 // [(P as Some)]   ---> [_1]
 // [(P as Some).0] ---> let Some(a) = [_1] in a
 // [(* P)] ---> * [P]
@@ -183,7 +193,13 @@ pub(crate) fn translate_rplace<'tcx, N: Namer<'tcx>>(
         match elem {
             Deref => {
                 use rustc_hir::Mutability::*;
-                let mutability = place_ty.ty.builtin_deref(false).expect("raw pointer").mutbl;
+
+                let Some(place_ty_deref) = place_ty.ty.builtin_deref(false) else {
+                    let place_type_name = qname_to_str(&names.real_ty(place_ty.ty));
+                    let var_name = loc.as_str();
+                    panic!("raw pointer {} of type {}", var_name, place_type_name)
+                };
+                let mutability = place_ty_deref.mutbl;
                 if mutability == Mut {
                     inner = Current(Box::new(inner))
                 }

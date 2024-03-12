@@ -197,6 +197,16 @@ fn translate_ty_inner<'tcx, N: Namer<'tcx>>(
     }
 }
 
+fn qname_to_str(q: &QName) -> String {
+    let mut s = String::new();
+    for i in &q.module {
+        s.push_str(&i);
+        s.push_str(".");
+    }
+    s.push_str(&q.name);
+    s
+}
+
 fn translate_projection_ty<'tcx, N: Namer<'tcx>>(
     mode: TyTranslation,
     ctx: &mut Why3Generator<'tcx>,
@@ -204,7 +214,12 @@ fn translate_projection_ty<'tcx, N: Namer<'tcx>>(
     pty: &AliasTy<'tcx>,
 ) -> MlT {
     if let TyTranslation::Declaration(id) = mode {
-        let ix = ctx.projections_in_ty(id).iter().position(|t| t == pty).unwrap();
+        let Some(ix) = ctx.projections_in_ty(id).iter().position(|t| t == pty) else {
+            let generic_args = ty::List::empty();
+            let proj_qname = names.ty(pty.def_id, pty.args);
+            let def_qname = names.ty(id, generic_args);
+            panic!("Projection {} not found in type declaration {}", qname_to_str(&proj_qname), qname_to_str(&def_qname))
+        };
         return MlT::TVar(Ident::build(&format!("proj{ix}")));
     } else {
         let ty = Ty::new_alias(ctx.tcx, AliasKind::Projection, *pty);

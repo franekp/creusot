@@ -61,11 +61,72 @@ module Real
 
 end
 
-(* Signed Integer *)
-module IntSize
-  use export mach.int.Int64
-  type isize = int64
+
+module UnBounded_int
+
+  use int.Int
+
+  type t
+
+  constant min : int
+  constant max : int
+
+  function to_int (n:t) : int
+  meta coercion function to_int
+  meta "model_projection" function to_int
+
+  val to_int (n:t) : int
+    ensures { result = n }
+
+  predicate in_bounds (n:int) = min <= n <= max
+
+  axiom to_int_in_bounds: forall n:t. in_bounds n
+
+  val of_int (n:int) : t
+    ensures  { result = n }
+
+  val (+) (a:t) (b:t) : t
+    ensures   { result = a + b }
+
+  val (-) (a:t) (b:t) : t
+    ensures  { result = a - b }
+
+  val (*) (a:t) (b:t) : t
+    ensures  { result = a * b }
+
+  val (-_) (a:t) : t
+    ensures  { result = - a }
+
+  axiom extensionality: forall x y: t. to_int x = to_int y -> x = y
+
+  val (=) (a:t) (b:t) : bool
+    ensures { result <-> a = b }
+    ensures { to_int a = to_int b -> result }
+
+  val (<=) (a:t) (b:t) : bool
+    ensures  { result <-> to_int a <= to_int b }
+
+  val (<) (a:t) (b:t) : bool
+    ensures  { result <-> to_int a < to_int b }
+
+  val (>=) (a:t) (b:t) : bool
+    ensures  { result <-> to_int a >= to_int b }
+
+  val (>) (a:t) (b:t) : bool
+    ensures  { result <-> to_int a > to_int b }
+
+  use int.ComputerDivision
+
+  val (/) (a:t) (b:t) : t
+    ensures  { b <> 0 -> result = div a b }
+
+  val (%) (a:t) (b:t) : t
+    ensures  { b <> 0 -> result = mod a b }
+
 end
+
+
+(* Signed Integer *)
 module Int8
   use int.Int
 
@@ -75,7 +136,7 @@ module Int8
   let constant max_int8 : int =   0x7f
   function to_int (x : int8) : int = int8'int x
 
-  clone export mach.int.Bounded_int with
+  clone export UnBounded_int with
     type t = int8,
     constant min = int8'minInt,
     constant max = int8'maxInt,
@@ -92,7 +153,7 @@ module Int16
   let constant max_int16 : int =   0x7fff
   function to_int (x : int16) : int = int16'int x
 
-  clone export mach.int.Bounded_int with
+  clone export UnBounded_int with
     type t = int16,
     constant min = int16'minInt,
     constant max = int16'maxInt,
@@ -101,10 +162,38 @@ module Int16
     lemma extensionality
 end
 module Int32
-  use export mach.int.Int32
+  use int.Int
+
+  type int32 = < range -0x80000000 0x7fffffff >
+
+  let constant min_int32 : int = - 0x80000000
+  let constant max_int32 : int =   0x7fffffff
+  function to_int (x : int32) : int = int32'int x
+
+  clone export UnBounded_int with
+    type t = int32,
+    constant min = int32'minInt,
+    constant max = int32'maxInt,
+    function to_int = int32'int,
+    lemma to_int_in_bounds,
+    lemma extensionality
 end
 module Int64
-  use export mach.int.Int64
+  use int.Int
+
+  type int64 = < range -0x8000000000000000 0x7fffffffffffffff >
+
+  let constant min_int64 : int = - 0x8000000000000000
+  let constant max_int64 : int =   0x7fffffffffffffff
+  function to_int (x : int64) : int = int64'int x
+
+  clone export UnBounded_int with
+    type t = int64,
+    constant min = int64'minInt,
+    constant max = int64'maxInt,
+    function to_int = int64'int,
+    lemma to_int_in_bounds,
+    lemma extensionality
 end
 module Int128
   use int.Int
@@ -115,7 +204,7 @@ module Int128
   let constant max_int128 : int =   0x7fffffffffffffffffffffffffffffff
   function to_int (x : int128) : int = int128'int x
 
-  clone export mach.int.Bounded_int with
+  clone export UnBounded_int with
     type t = int128,
     constant min = int128'minInt,
     constant max = int128'maxInt,
@@ -123,12 +212,12 @@ module Int128
     lemma to_int_in_bounds,
     lemma extensionality
 end
+module IntSize
+  clone export Int64
+  type isize = int64
+end
 
 (* Unsigned Integers *)
-module UIntSize
-  use export mach.int.UInt64
-  type usize = uint64
-end
 module UInt8
   use int.Int
 
@@ -138,7 +227,7 @@ module UInt8
   let constant max_uint8 : int =  0xff
   function to_int (x : uint8) : int = uint8'int x
 
-  clone export mach.int.Bounded_int with
+  clone export UnBounded_int with
     type t = uint8,
     constant min = uint8'minInt,
     constant max = uint8'maxInt,
@@ -155,7 +244,7 @@ module UInt16
   let constant max_uint16 : int =  0xffff
   function to_int (x : uint16) : int = uint16'int x
 
-  clone export mach.int.Bounded_int with
+  clone export UnBounded_int with
     type t = uint16,
     constant min = uint16'minInt,
     constant max = uint16'maxInt,
@@ -164,10 +253,38 @@ module UInt16
     lemma extensionality
 end
 module UInt32
-  use export mach.int.UInt32
+  use int.Int
+
+  type uint32 = < range 0x0 0xffffffff >
+
+  let constant min_uint32 : int =  0x00
+  let constant max_uint32 : int =  0xffffffff
+  function to_int (x : uint32) : int = uint32'int x
+
+  clone export UnBounded_int with
+    type t = uint32,
+    constant min = uint32'minInt,
+    constant max = uint32'maxInt,
+    function to_int = uint32'int,
+    lemma to_int_in_bounds,
+    lemma extensionality
 end
 module UInt64
-  use export mach.int.UInt64
+  use int.Int
+
+  type uint64 = < range 0x0 0xffffffffffffffff >
+
+  let constant min_uint64 : int =  0x00
+  let constant max_uint64 : int =  0xffffffffffffffff
+  function to_int (x : uint64) : int = uint64'int x
+
+  clone export UnBounded_int with
+    type t = uint64,
+    constant min = uint64'minInt,
+    constant max = uint64'maxInt,
+    function to_int = uint64'int,
+    lemma to_int_in_bounds,
+    lemma extensionality
 end
 module UInt128
   use int.Int
@@ -178,13 +295,17 @@ module UInt128
   let constant max_uint128 : int =  0xffffffffffffffffffffffffffffffff
   function to_int (x : uint128) : int = uint128'int x
 
-  clone export mach.int.Bounded_int with
+  clone export UnBounded_int with
     type t = uint128,
     constant min = uint128'minInt,
     constant max = uint128'maxInt,
     function to_int = uint128'int,
     lemma to_int_in_bounds,
     lemma extensionality
+end
+module UIntSize
+  clone export UInt64
+  type usize = uint64
 end
 
 (* Floats *)

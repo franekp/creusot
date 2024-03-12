@@ -168,7 +168,7 @@ fn detect_why3_version(why3: &Path) -> Option<String> {
     let version_full = String::from_utf8(output.stdout).ok()?;
     let version = version_full.strip_prefix("Why3 platform, version ");
     version.map(|ver| {
-        let parts: Vec<_> = ver.split(|c| c == '.' || c == '+').collect();
+        let parts: Vec<_> = ver.trim_end().split(|c| c == '.' || c == '+').collect();
         String::from(&parts[..3].join("."))
     })
 }

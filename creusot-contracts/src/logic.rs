@@ -1,5 +1,6 @@
 #![cfg_attr(not(creusot), allow(unused_imports))]
 
+mod char;
 mod fmap;
 mod fset;
 mod int;
@@ -9,6 +10,7 @@ pub mod ord;
 mod seq;
 mod set;
 
+pub use char::Char;
 pub use fmap::FMap;
 pub use fset::FSet;
 pub use int::Int;

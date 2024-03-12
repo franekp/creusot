@@ -253,7 +253,7 @@ pub mod well_founded;
 
 // We add some common things at the root of the creusot-contracts library
 pub use crate::{
-    logic::{IndexLogic as _, Int, OrdLogic, Seq},
+    logic::{IndexLogic as _, Int, Char, OrdLogic, Seq},
     macros::*,
     model::{DeepModel, ShallowModel},
     resolve::Resolve,
