@@ -971,6 +971,30 @@ pub(crate) mod parsing {
                     }
                 }
                 lhs = Term::Binary(TermBinary { left: Box::new(lhs), op, right: Box::new(rhs) });
+            } else if (input.peek(Token![..]) || input.peek(Token![..=])) && Precedence::Range >= base {
+                let limits = input.parse()?;
+                if input.is_empty() {
+                    lhs = Term::Range(TermRange {
+                        from: Some(Box::new(lhs)),
+                        limits,
+                        to: None,
+                    });
+                    break;
+                }
+                let mut rhs = unary_term(input, allow_struct)?;
+                loop {
+                    let next = peek_precedence(input);
+                    if next > Precedence::Range {
+                        rhs = parse_term(input, rhs, allow_struct, next)?;
+                    } else {
+                        break;
+                    }
+                }
+                lhs = Term::Range(TermRange {
+                    from: Some(Box::new(lhs)),
+                    limits,
+                    to: Some(Box::new(rhs)),
+                });
             } else if Precedence::Cast >= base && input.peek(Token![as]) {
                 let as_token: Token![as] = input.parse()?;
                 let ty = input.call(Type::without_plus)?;
@@ -1029,6 +1053,23 @@ pub(crate) mod parsing {
             Ok(Term::Final(TermFinal {
                 final_token: input.parse()?,
                 term: Box::new(unary_term(input, allow_struct)?),
+            }))
+        } else if input.peek(Token![..]) || input.peek(Token![..=]) {
+            // .. <term> OR ..= <term>
+            let limits = input.parse()?;
+            let mut rhs = unary_term(input, allow_struct)?;
+            loop {
+                let next = peek_precedence(input);
+                if next > Precedence::Range {
+                    rhs = parse_term(input, rhs, allow_struct, next)?;
+                } else {
+                    break;
+                }
+            }
+            Ok(Term::Range(TermRange {
+                from: None,
+                limits,
+                to: Some(Box::new(rhs)),
             }))
         } else {
             trailer_term(input, allow_struct)

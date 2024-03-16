@@ -158,7 +158,12 @@ pub fn encode_term(term: &RT) -> Result<TokenStream, EncodeError> {
             Ok(quote_spanned! {sp=> (#term) })
         }
         RT::Path(_) => Ok(quote_spanned! {sp=> #term }),
-        RT::Range(_) => Err(EncodeError::Unsupported(term.span(), "Range".into())),
+        RT::Range(r) => {
+            let from = r.from.as_ref().map(|from| encode_term(&*from)).transpose()?;
+            let to = r.to.as_ref().map(|to| encode_term(&*to)).transpose()?;
+            let limits = &r.limits;
+            Ok(quote_spanned! {sp=> #from #limits #to })
+        }
         RT::Reference(TermReference { mutability, expr, .. }) => {
             let term = encode_term(expr)?;
             Ok(quote! {
