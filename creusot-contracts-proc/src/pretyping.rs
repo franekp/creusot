@@ -99,7 +99,10 @@ pub fn encode_term(term: &RT) -> Result<TokenStream, EncodeError> {
             let func = encode_term(func)?;
             Ok(quote_spanned! {sp=> #func (#(#args),*)})
         }
-        RT::Cast(_) => Err(EncodeError::Unsupported(term.span(), "Cast".into())),
+        RT::Cast(TermCast {expr, ty, ..}) => {
+            let expr = encode_term(expr)?;
+            Ok(quote_spanned! {sp=> #expr as #ty})
+        },
         RT::Field(TermField { base, member, .. }) => {
             let base = encode_term(base)?;
             Ok(quote!({ #base . #member }))
@@ -134,7 +137,11 @@ pub fn encode_term(term: &RT) -> Result<TokenStream, EncodeError> {
                 (#expr).index_logic(#index)
             })
         }
-        RT::Let(_) => Err(EncodeError::Unsupported(term.span(), "Let".into())),
+        RT::Let(TermLet {pat, expr, ..}) => {
+            let pat = encode_pattern(pat)?;
+            let expr = encode_term(expr)?;
+            Ok(quote! { let #pat = #expr; })
+        },
         RT::Lit(TermLit { ref lit }) => match lit {
             // FIXME: allow unbounded integers
             Lit::Int(int) if int.suffix() == "" => Ok(
