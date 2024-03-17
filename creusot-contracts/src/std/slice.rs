@@ -313,6 +313,9 @@ extern_spec! {
 
         #[ensures(result@ == self_@)]
         fn into_vec<A: Allocator>(self_: Box<Self, A>) -> Vec<T, A>;
+
+        #[ensures(result@ == self@)]
+        fn to_vec(&self) -> Vec<T> where T: Clone;
     }
 
     impl<T, I> IndexMut<I> for [T]

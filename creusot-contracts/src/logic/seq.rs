@@ -1,6 +1,7 @@
+use ::std::ops::{Range, RangeInclusive, RangeFrom, RangeTo, RangeToInclusive};
 use crate::{
     logic::{ops::IndexLogic, Mapping},
-    *,
+    std::ops::RangeInclusiveExt, *,
 };
 
 #[cfg_attr(creusot, creusot::builtins = "seq.Seq.seq")]
@@ -169,6 +170,71 @@ impl<T> IndexLogic<Int> for Seq<T> {
     #[rustc_diagnostic_item = "seq_index"]
     #[creusot::builtins = "seq.Seq.get"]
     fn index_logic(self, _: Int) -> Self::Item {
+        absurd
+    }
+}
+
+impl<T> IndexLogic<Range<Int>> for Seq<T> {
+    type Item = Seq<T>;
+
+    #[logic]
+    #[trusted]
+    #[open(self)]
+    #[rustc_diagnostic_item = "seq_index_range"]
+    #[ensures(result == self.subsequence(r.start, r.end))]
+    fn index_logic(self, r: Range<Int>) -> Self::Item {
+        absurd
+    }
+}
+
+impl<T> IndexLogic<RangeInclusive<Int>> for Seq<T> {
+    type Item = Seq<T>;
+
+    #[logic]
+    #[trusted]
+    #[open(self)]
+    #[rustc_diagnostic_item = "seq_index_range_inclusive"]
+    #[ensures(result == self.subsequence(r.start_log(), r.end_log() + 1))]
+    fn index_logic(self, r: RangeInclusive<Int>) -> Self::Item {
+        absurd
+    }
+}
+
+impl<T> IndexLogic<RangeFrom<Int>> for Seq<T> {
+    type Item = Seq<T>;
+
+    #[logic]
+    #[trusted]
+    #[open(self)]
+    #[rustc_diagnostic_item = "seq_index_range_from"]
+    #[ensures(result == self.subsequence(r.start, self.len()))]
+    fn index_logic(self, r: RangeFrom<Int>) -> Self::Item {
+        absurd
+    }
+}
+
+impl<T> IndexLogic<RangeTo<Int>> for Seq<T> {
+    type Item = Seq<T>;
+
+    #[logic]
+    #[trusted]
+    #[open(self)]
+    #[rustc_diagnostic_item = "seq_index_range_to"]
+    #[ensures(result == self.subsequence(0, r.end))]
+    fn index_logic(self, r: RangeTo<Int>) -> Self::Item {
+        absurd
+    }
+}
+
+impl<T> IndexLogic<RangeToInclusive<Int>> for Seq<T> {
+    type Item = Seq<T>;
+
+    #[logic]
+    #[trusted]
+    #[open]
+    #[rustc_diagnostic_item = "seq_index_range_to_inclusive"]
+    #[ensures(result == self.subsequence(0, r.end + 1))]
+    fn index_logic(self, r: RangeToInclusive<Int>) -> Self::Item {
         absurd
     }
 }
