@@ -61,6 +61,9 @@ fn invoke_cargo(args: &CreusotArgs) {
         .env("CARGO_CREUSOT", "1");
 
     cmd.env("CREUSOT_ARGS", serde_json::to_string(&args).unwrap());
+    if args.options.opt_in {
+        cmd.env("CREUSOT_VERIFY_OPT_IN", "1");
+    }
 
     let exit_status = cmd.status().expect("could not run cargo");
     if !exit_status.success() {

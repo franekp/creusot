@@ -37,6 +37,12 @@ pub struct CommonOptions {
     /// Use `result` as the trigger of definition and specification axioms of logic/ghost/predicate functions
     #[clap(long, default_value_t = false, action = clap::ArgAction::Set)]
     pub simple_triggers: bool,
+    /// Make the verification opt-in with the `#[verify]` attribute, instead of opt-out with the `#[trusted]` attribute.
+    /// In this mode all functions are treated as `#[trusted]` unless they are marked with any of the attributes from
+    /// creusot-contracts: `#[verify]`, `#[requires(..)]`, `#[ensures(..)]`, `#[maintains(..)]`, `#[variant(..)]`,
+    /// `#[logic]` or `#[predicate]`.
+    #[clap(long, action)]
+    pub opt_in: bool,
 }
 
 #[derive(Parser, Serialize, Deserialize)]

@@ -22,11 +22,11 @@ use rustc_middle::ty::{
     self, BorrowKind, ClosureKind, EarlyBinder, GenericArg, GenericArgs, GenericArgsRef, Ty,
     TyCtxt, TyKind, UpvarCapture,
 };
-use rustc_span::{symbol, symbol::kw, Span, Symbol, DUMMY_SP};
+use rustc_span::{sym::const_trait_bound_opt_out, symbol::{self, kw}, Span, Symbol, DUMMY_SP};
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Display, Formatter},
-    iter,
+    iter, sync::OnceLock,
 };
 use why3::{
     declaration,
@@ -96,7 +96,37 @@ pub(crate) fn is_predicate(tcx: TyCtxt, def_id: DefId) -> bool {
 }
 
 pub(crate) fn is_trusted(tcx: TyCtxt, def_id: DefId) -> bool {
-    get_attr(tcx.get_attrs_unchecked(def_id), &["creusot", "decl", "trusted"]).is_some()
+    static CREUSOT_VERIFY_OPT_IN: OnceLock<bool> = OnceLock::new();
+    let trust_functions_with_no_contract = *CREUSOT_VERIFY_OPT_IN.get_or_init(|| {
+        std::env::var("CREUSOT_VERIFY_OPT_IN").is_ok()
+    });
+
+    if get_attr(tcx.get_attrs_unchecked(def_id), &["creusot", "decl", "trusted"]).is_some() {
+        true
+    } else if has_contract(tcx, def_id) {
+        false
+    } else {
+        is_function(tcx, def_id) && trust_functions_with_no_contract
+    }
+}
+
+fn has_contract(tcx: TyCtxt, def_id: DefId) -> bool {
+    let contract_attrs: &[&[&str]] = &[
+        &["creusot", "decl", "verify"],
+        &["creusot", "clause", "ensures"],
+        &["creusot", "clause", "requires"],
+        &["creusot", "clause", "variant"],
+    ];
+    let other_nontrusted_items = [
+        is_logic, is_predicate, is_no_translate, is_spec, is_extern_spec,
+        is_user_tyinv, is_inv_internal, is_structural_ty_inv,
+    ];
+    contract_attrs.iter().any(|attr| get_attr(tcx.get_attrs_unchecked(def_id), attr).is_some())
+        || other_nontrusted_items.iter().any(|f| f(tcx, def_id))
+}
+
+fn is_function(tcx: TyCtxt, def_id: DefId) -> bool {
+    matches!(tcx.def_kind(def_id), DefKind::Fn | DefKind::AssocFn | DefKind::Closure)
 }
 
 pub(crate) fn is_law(tcx: TyCtxt, def_id: DefId) -> bool {
