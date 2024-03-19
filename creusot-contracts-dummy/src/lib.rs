@@ -58,6 +58,11 @@ pub fn trusted(_: TS1, tokens: TS1) -> TS1 {
     tokens
 }
 
+#[proc_macro_attribute]
+pub fn verify(_: TS1, tokens: TS1) -> TS1 {
+    tokens
+}
+
 #[proc_macro]
 pub fn extern_spec(_: TS1) -> TS1 {
     TS1::new()

@@ -606,6 +606,17 @@ pub fn trusted(_: TS1, tokens: TS1) -> TS1 {
     })
 }
 
+#[proc_macro_attribute]
+pub fn verify(_: TS1, tokens: TS1) -> TS1 {
+    // let p: ItemFn = parse_macro_input!(tokens);
+    let tokens = TokenStream::from(tokens);
+    TS1::from(quote! {
+        #[creusot::decl::verify]
+        #[allow(creusot::experimental)]
+        #tokens
+    })
+}
+
 #[proc_macro]
 pub fn pearlite(tokens: TS1) -> TS1 {
     let block = parse_macro_input!(tokens with TBlock::parse_within);

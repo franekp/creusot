@@ -78,6 +78,12 @@ mod macros {
     /// valid.
     pub use creusot_contracts_proc::trusted;
 
+    /// Useful only in the opt-in mode, where functions are assumed to be trusted by default, and only functions
+    /// with contracts are verified. This attribute is for functions that don't have a contract, but we want to
+    /// verify them anyway. For example we may want to check that they respect preconditions of the functions they
+    /// call, or that they don't panic.
+    pub use creusot_contracts_proc::verify;
+
     /// Declares a variant for a function, this is primarily used in combination with logical functions
     /// The variant must be an expression which returns a type implementing [WellFounded]
     pub use creusot_contracts_proc::variant;
@@ -175,6 +181,12 @@ mod macros {
     /// Instructs Pearlite to ignore the body of a declaration, assuming any contract the declaration has is
     /// valid.
     pub use creusot_contracts_dummy::trusted;
+
+    /// Useful only in the opt-in mode, where functions are assumed to be trusted by default, and only functions
+    /// with contracts are verified. This attribute is for functions that don't have a contract, but we want to
+    /// verify them anyway. For example we may want to check that they respect preconditions of the functions they
+    /// call, or that they don't panic.
+    pub use creusot_contracts_dummy::verify;
 
     /// Declares a variant for a function, this is primarily used in combination with logical functions
     /// The variant must be an expression which returns a type implementing [WellFounded]
