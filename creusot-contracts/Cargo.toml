@@ -12,6 +12,8 @@ creusot-contracts-dummy = { path = "../creusot-contracts-dummy", version = "*" }
 num-rational = "0.3.2"
 
 [features]
-default = []
 typechecker = []
 contracts = []
+
+no_std_default_spec = []
+no_std_iterator_spec = []

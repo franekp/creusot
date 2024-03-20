@@ -86,6 +86,7 @@ pub trait FromIterator<A>: ::std::iter::FromIterator<A> {
     fn from_iter_post(prod: Seq<A>, res: Self) -> bool;
 }
 
+#[cfg(not(feature = "no_std_iterator_spec"))]
 extern_spec! {
     mod std {
         mod iter {

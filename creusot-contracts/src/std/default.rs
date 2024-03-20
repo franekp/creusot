@@ -6,6 +6,7 @@ pub trait Default: ::std::default::Default {
     fn is_default(self) -> bool;
 }
 
+#[cfg(not(feature = "no_std_default_spec"))]
 extern_spec! {
     mod std {
         mod default {
