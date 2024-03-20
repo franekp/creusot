@@ -232,14 +232,29 @@ pub(crate) fn item_qname(ctx: &TranslationCtx, def_id: DefId, ns: Namespace) -> 
 
 pub(crate) fn item_name(tcx: TyCtxt, def_id: DefId, ns: Namespace) -> Ident {
     use rustc_hir::def::DefKind::*;
+    use rustc_hir::def::CtorOf;
 
     match tcx.def_kind(def_id) {
         AssocTy => ident_of_ty(tcx.item_name(def_id)),
-        Ctor(_, _) => format!("C_{}", tcx.item_name(def_id)).into(),
-        Struct | Variant | Union if ns == Namespace::ValueNS => {
+        Ctor(CtorOf::Variant, _) => {
+            let parent = tcx.parent(def_id);
+            format!("C_{}_{}", tcx.item_name(parent), tcx.item_name(def_id)).into()
+        },
+        Ctor(CtorOf::Struct, _) => {
+            format!("C_{}", tcx.item_name(def_id)).into()
+        },
+        Variant if ns == Namespace::ValueNS => {
+            let parent = tcx.parent(def_id);
+            format!("C_{}_{}", tcx.item_name(parent), tcx.item_name(def_id)).into()
+        }
+        Struct | Union if ns == Namespace::ValueNS => {
             format!("C_{}", tcx.item_name(def_id)).into()
         }
-        Variant | Struct | Enum | Union => {
+        Variant => {
+            let parent = tcx.parent(def_id);
+            format!("t_{}_{}", tcx.item_name(parent), tcx.item_name(def_id)).into()
+        }
+        Struct | Enum | Union => {
             format!("t_{}", tcx.item_name(def_id).as_str().to_ascii_lowercase()).into()
         }
         Closure => {
