@@ -37,7 +37,10 @@ pub fn derive_deep_model(input: proc_macro::TokenStream) -> proc_macro::TokenStr
 
     let open = match vis {
         syn::Visibility::Public(_) => quote! {#[::creusot_contracts::open]},
-        syn::Visibility::Restricted(res) => quote! { #[::creusot_contracts::open(#res)] },
+        syn::Visibility::Restricted(res) => {
+            let path = &res.path;
+            quote! { #[::creusot_contracts::open(#path)] }
+        },
         syn::Visibility::Inherited => quote! { #[::creusot_contracts::open(self)] },
     };
 
