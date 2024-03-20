@@ -36,9 +36,9 @@ pub fn derive_deep_model(input: proc_macro::TokenStream) -> proc_macro::TokenStr
     let eq = deep_model(&name, &deep_model_ty_name, &input.data);
 
     let open = match vis {
-        syn::Visibility::Public(_) => quote! {#[open]},
-        syn::Visibility::Restricted(res) => quote! { #[open(#res)] },
-        syn::Visibility::Inherited => quote! { #[open(self)] },
+        syn::Visibility::Public(_) => quote! {#[::creusot_contracts::open]},
+        syn::Visibility::Restricted(res) => quote! { #[::creusot_contracts::open(#res)] },
+        syn::Visibility::Inherited => quote! { #[::creusot_contracts::open(self)] },
     };
 
     let expanded = quote! {
@@ -47,9 +47,10 @@ pub fn derive_deep_model(input: proc_macro::TokenStream) -> proc_macro::TokenStr
         impl #impl_generics ::creusot_contracts::DeepModel for #name #ty_generics #where_clause {
             type DeepModelTy = #deep_model_ty_name #ty_generics;
 
-            #[logic]
+            #[::creusot_contracts::logic]
             #open
             fn deep_model(self) -> Self::DeepModelTy {
+                use ::creusot_contracts::DeepModel;
                 #eq
             }
         }
@@ -116,8 +117,17 @@ fn deep_model_ty_fields(fields: &Fields) -> TokenStream {
 fn deep_model_ty(base_ident: &Ident, generics: &Generics, data: &Data) -> TokenStream {
     match data {
         Data::Struct(ref data) => {
-            let data = deep_model_ty_fields(&data.fields);
-            quote! { struct #base_ident #generics #data }
+            if data.fields.len() == 1 {
+                let field = data.fields.iter().next().unwrap();
+                let ty = &field.ty;
+                quote! { type #base_ident #generics = <#ty as creusot_contracts::DeepModel> :: DeepModelTy; }
+            } else {
+                let fields = deep_model_ty_fields(&data.fields);
+                match &data.fields {
+                    Fields::Named(_) => quote! { struct #base_ident #generics #fields },
+                    Fields::Unnamed(_) | Fields::Unit => quote! { struct #base_ident #generics #fields; },
+                }
+            }
         }
         Data::Enum(ref data) => {
             let arms = data.variants.iter().map(|v| {
@@ -139,6 +149,13 @@ fn deep_model_ty(base_ident: &Ident, generics: &Generics, data: &Data) -> TokenS
 
 fn deep_model(src_ident: &Ident, tgt_ident: &Path, data: &Data) -> TokenStream {
     match *data {
+        Data::Struct(ref data) if data.fields.len() == 1 => {
+            let field = data.fields.iter().next().unwrap();
+            match &field.ident {
+                Some(name) => quote! { self.#name.deep_model() },
+                None => return quote! { self.0.deep_model() },
+            }
+        },
         Data::Struct(ref data) => match data.fields {
             Fields::Named(ref fields) => {
                 let recurse = fields.named.iter().map(|f| {

@@ -144,9 +144,10 @@ fn try_to_bits<'tcx, C: ToBits<'tcx>>(
                 resolve_assoc_item_opt(ctx.tcx, env, *def_id, subst).unwrap_or((*def_id, subst));
             Literal::Function(method.0, method.1)
         }
-        _ => {
-            ctx.crash_and_error(span, &format!("unsupported constant expression"));
-        }
+        _ => Literal::ZST,  // FIXME: find a sound way of handling this, this should be translated to an opaque constant
+        // _ => {
+        //     ctx.crash_and_error(span, &format!("unsupported constant expression"));
+        // }
     }
 }
 

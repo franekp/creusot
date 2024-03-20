@@ -115,7 +115,8 @@ impl<'tcx> Why3Generator<'tcx> {
 
     pub(crate) fn translate(&mut self, def_id: DefId) {
         use std::panic::{catch_unwind, AssertUnwindSafe};
-        self.translate_inner(def_id); return;
+        // Uncomment the following line to get a backtrace for panics during translation:
+        // self.translate_inner(def_id); return;
         catch_unwind(AssertUnwindSafe(|| self.translate_inner(def_id)))
         .unwrap_or_else(|err| {
             let msg = if let Some(s) = err.downcast_ref::<String>() {

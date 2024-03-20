@@ -189,6 +189,10 @@ pub(crate) fn param_def_id(tcx: TyCtxt, def_id: LocalDefId) -> LocalDefId {
 }
 
 pub(crate) fn should_translate(tcx: TyCtxt, mut def_id: DefId) -> bool {
+    match item_type(tcx, def_id) {
+        ItemType::Unsupported(_) => return false,
+        _ => {},
+    }
     loop {
         if is_no_translate(tcx, def_id) {
             return false;
@@ -410,7 +414,6 @@ pub(crate) fn item_type(tcx: TyCtxt<'_>, def_id: DefId) -> ItemType {
         DefKind::Closure => ItemType::Closure,
         DefKind::Struct | DefKind::Enum | DefKind::Union => ItemType::Type,
         DefKind::AssocTy => ItemType::AssocTy,
-        DefKind::AnonConst => panic!(),
         dk => ItemType::Unsupported(dk),
     }
 }
@@ -529,7 +532,7 @@ pub(crate) fn pre_sig_of<'tcx>(
     let mut inputs: Vec<_> = inputs
         .enumerate()
         .map(|(idx, (ident, ty))| {
-            if ident.name.as_str() == "result" {
+            if ident.name.as_str() == "result" && has_contract(ctx.tcx, def_id) {
                 ctx.crash_and_error(ident.span, "`result` is not allowed as a parameter name")
             }
 

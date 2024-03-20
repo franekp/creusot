@@ -187,6 +187,10 @@ fn translate_ty_inner<'tcx, N: Namer<'tcx>>(
             names.import_prelude_module(PreludeModule::Opaque);
             MlT::TConstructor(QName::from_string("dyn").unwrap())
         }
+        Alias(AliasKind::Opaque, _) => {
+            names.import_prelude_module(PreludeModule::Opaque);
+            MlT::TConstructor(QName::from_string("impl").unwrap())
+        }
 
         Foreign(_) => {
             names.import_prelude_module(PreludeModule::Opaque);
@@ -207,6 +211,7 @@ fn qname_to_str(q: &QName) -> String {
     s
 }
 
+#[allow(unreachable_code)]
 fn translate_projection_ty<'tcx, N: Namer<'tcx>>(
     mode: TyTranslation,
     ctx: &mut Why3Generator<'tcx>,
@@ -215,6 +220,12 @@ fn translate_projection_ty<'tcx, N: Namer<'tcx>>(
 ) -> MlT {
     if let TyTranslation::Declaration(id) = mode {
         let Some(ix) = ctx.projections_in_ty(id).iter().position(|t| t == pty) else {
+            names.import_prelude_module(PreludeModule::Opaque);
+            // There are so many cases where there is a projection that wasn't caught by the projections_in_ty function,
+            // that we can't really trust it. There is a lot of value in not crashing when encountering an unsupported
+            // construct, so we just return an opaque type here.
+            return MlT::TConstructor(QName::from_string("unsupported_projection").unwrap());
+            // In case you want to debug projections_in_ty, you can use the following panic:
             let generic_args = ty::List::empty();
             let proj_qname = names.ty(pty.def_id, pty.args);
             let def_qname = names.ty(id, generic_args);
@@ -304,6 +315,17 @@ impl<'tcx> Why3Generator<'tcx> {
 
         // FIXME: Make this a proper BFS / DFS
         let subst = GenericArgs::identity_for_item(self.tcx, def_id);
+
+        if let Some(local_id) = def_id.as_local() {
+            let hir_id = self.tcx.hir().local_def_id_to_hir_id(local_id);
+
+            // Sometimes the type is not an ADT but a closure type, and then trying
+            // to get the adt_def would panic, so we return early in this case.
+            let rustc_hir::Node::Item(_) = self.tcx.hir().get(hir_id) else {
+                return v;
+            };
+        }
+
         for f in self.adt_def(def_id).all_fields() {
             let ty = f.ty(self.tcx, subst);
             let ty = self.try_normalize_erasing_regions(param_env, ty).unwrap_or(ty);

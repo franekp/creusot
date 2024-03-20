@@ -18,7 +18,9 @@ end
 module Opaque
   type opaque_ptr
   type dyn
+  type impl
   type foreign
+  type unsupported_projection
 end
 
 module Bool
